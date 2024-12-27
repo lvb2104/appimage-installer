@@ -63,11 +63,11 @@ if [ "$option" == "1" ]; then
     checkIcon=false
 
     # find the first .AppImage file in the current directory
-    echo "✅ Searching for .AppImage files in the current directory..."
+    echo "Searching for .AppImage files in the current directory..."
     appimage_path=$(find . -maxdepth 1 \( -name "*.AppImage" -o -name "*.appimage" \) -print -quit)
 
     # find the first .png or .jpg or .jpeg or .svg file in the current directory
-    echo "✅ Searching for icon file..."
+    echo "Searching for icon file..."
     icon_path=$(find . -maxdepth 1 -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" \) -print -quit)
 
     if [ -n "$appimage_path" ]; then
@@ -188,8 +188,8 @@ if [ "$option" == "2" ]; then
 
     # Move desktop file to Downloads
     if [ -f "/usr/share/applications/${app_name}.desktop" ]; then
-        sudo mv "/usr/share/applications/${app_name}.desktop" "$backup_dir/"
-        echo "✅ Desktop file moved to $backup_dir"
+        sudo rm "/usr/share/applications/${app_name}.desktop"
+        echo "✅ Desktop file removed"
     fi
 
     # Move icon if it exists
