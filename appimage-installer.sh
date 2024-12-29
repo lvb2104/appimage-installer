@@ -26,19 +26,11 @@ cleanup() {
     # Create backup directory if it doesn't exist
     backup_dir="$PWD"  # Return files to original directory
 
-    # Move AppImage back if it exists in /opt
-    if [ -f "/opt/${app_name}.AppImage" ]; then
-        sudo mv "/opt/${app_name}.AppImage" "$backup_dir/" || echo "❌ Failed to restore AppImage"
-        echo "✅ AppImage restored to $backup_dir"
+    # Move app folder back if it exists in /opt
+    if [ -d "/opt/${app_name}" ]; then
+        sudo mv "/opt/${app_name}" "$backup_dir/" || echo "❌ Failed to restore app folder"
+        echo "✅ App folder restored to $backup_dir"
     fi
-
-    # Move icon file back (any extension)
-    for ext in png jpg jpeg svg; do
-        if [ -f "/opt/${app_name}.${ext}" ]; then
-            sudo mv "/opt/${app_name}.${ext}" "$backup_dir/" || echo "❌ Failed to restore icon"
-            echo "✅ Icon restored to $backup_dir"
-        fi
-    done
 
     # Remove desktop file (this can be recreated)
     if [ -f "/usr/share/applications/${app_name}.desktop" ]; then
@@ -98,20 +90,24 @@ if [ "$option" == "1" ]; then
         # make the .AppImage file executable
         chmod +x "$appimage_path"
 
-        # move the .AppImage file to /opt
-        echo "Moving .AppImage file to /opt..."
-        if ! sudo mv "$appimage_path" "/opt/${app_name}.AppImage"; then
+        # Create app folder in /opt
+        app_folder="/opt/${app_name}"
+        sudo mkdir -p "$app_folder"
+
+        # Move the .AppImage file to the app folder
+        echo "Moving .AppImage file to $app_folder..."
+        if ! sudo mv "$appimage_path" "$app_folder/${app_name}.AppImage"; then
             echo "Error: Failed to move AppImage file"
             exit 1
         fi
 
-        # move the icon file to /opt
+        # move the icon file to the app folder
         if [ -n "$icon_path" ]; then
-            echo "✅Found icon file: $icon_path"
-            sudo mv "$icon_path" "/opt/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')"
+            echo "✅ Found icon file: $icon_path"
+            sudo mv "$icon_path" "$app_folder/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')"
 
             # check if the icon file exists
-            if [ -f "/opt/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')" ]; then
+            if [ -f "$app_folder/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')" ]; then
                 echo "✅ Icon file moved successfully"
             else
                 echo "Error: Failed to move icon file"
@@ -123,7 +119,7 @@ if [ "$option" == "1" ]; then
         else
             echo "❌ No icon file found in the current directory."
             echo "You can add an icon file later by running the following command:"
-            echo "sudo mv [your_icon_file] /opt/${app_name}.png"
+            echo "sudo mv [your_icon_file] $app_folder/${app_name}.png"
         fi
 
         # store the path to the .desktop file
@@ -139,9 +135,9 @@ if [ "$option" == "1" ]; then
         # write to the .desktop file
         echo "[Desktop Entry]" | sudo tee -a $path
         echo "Name=$app_name" | sudo tee -a $path
-        echo "Exec=/opt/${app_name}.AppImage" | sudo tee -a $path
+        echo "Exec=$app_folder/${app_name}.AppImage" | sudo tee -a $path
         if [ -n "$icon_path" ]; then
-            echo "Icon=/opt/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')" | sudo tee -a $path
+            echo "Icon=$app_folder/${app_name}$(basename "$icon_path" | sed 's/.*\(\.[^.]*\)$/\1/')" | sudo tee -a $path
         fi
         echo "Type=Application" | sudo tee -a $path
         echo "Categories=Development;" | sudo tee -a $path
@@ -180,26 +176,17 @@ if [ "$option" == "2" ]; then
     backup_dir="$HOME/Downloads/AppImage_backups"
     mkdir -p "$backup_dir"
 
-    # Move AppImage to Downloads
-    if [ -f "/opt/${app_name}.AppImage" ]; then
-        sudo mv "/opt/${app_name}.AppImage" "$backup_dir/"
-        echo "✅ AppImage moved to $backup_dir"
+    # Move app folder to Downloads
+    if [ -d "/opt/${app_name}" ]; then
+        sudo mv "/opt/${app_name}" "$backup_dir/"
+        echo "✅ App folder moved to $backup_dir"
     fi
 
-    # Move desktop file to Downloads
+    # Remove desktop file
     if [ -f "/usr/share/applications/${app_name}.desktop" ]; then
         sudo rm "/usr/share/applications/${app_name}.desktop"
         echo "✅ Desktop file removed"
     fi
-
-    # Move icon if it exists
-    for ext in png jpg jpeg svg; do
-        if [ -f "/opt/${app_name}.${ext}" ]; then
-            sudo mv "/opt/${app_name}.${ext}" "$backup_dir/"
-            echo "✅ Icon file moved to $backup_dir"
-            break
-        fi
-    done
 
     echo "✅ AppImage uninstalled successfully. Files backed up to $backup_dir"
     uninstallation_success=true
